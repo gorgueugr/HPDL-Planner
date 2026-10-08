@@ -11,8 +11,8 @@
 #include "hpdl/domain/domain.hh"
 #include "hpdl/domain/problem.hh"
 #include "hpdl/lang/goals/literalgoal.hh"
-#include <python2.7/structmember.h>
-#include "hpdl/py/pyLiteral.cpp"
+#include <structmember.h>
+#include "pyLiteral.cpp"
 using namespace std;
 
 #ifdef PYTHON_FOUND
@@ -56,12 +56,11 @@ static Literal * buildLiteral(PyObject * args, bool effect){
 	if(e == NULL)
 	    return 0;
 
-	if(!PyString_Check(e)){
-	    Py_DECREF(e);
-	    return 0;
+	if(!PyUnicode_Check(e)){
+	    return 0;   // PyTuple_GetItem devuelve referencia prestada
 	}
 
-	name = PyString_AsString(e);
+	name = PyUnicode_AsUTF8(e);
 
 	// buscamos si el literal ya está definido en el diccionario de
 	// nombres de literales (debería estarlo)
@@ -84,7 +83,6 @@ static Literal * buildLiteral(PyObject * args, bool effect){
 	    domain->metainfo.push_back(mt);
 	    (domain->ldictionary).insert(make_pair(lit->getName(), lit->getId()));
 	}
-	Py_DECREF(e);
 
 	// Recorremos el resto de posibles argumentos construyendo
 	// las diferentes constantes.
@@ -99,14 +97,14 @@ static Literal * buildLiteral(PyObject * args, bool effect){
 		lit->addParameter(make_pair(-1,(float)PyFloat_AsDouble(e)));
 	    }
 	    // chequear si es un entero
-	    else if(PyInt_Check(e)){
-		lit->addParameter(make_pair(-1,(float)PyInt_AsLong(e)));
+	    else if(PyLong_Check(e)){
+		lit->addParameter(make_pair(-1,(float)PyLong_AsLong(e)));
 	    }
 
 	    // por último chequear si es una cadena, en cuyo
 	    // caso habrá que extraer el símbolo correspondiente
-	    else if(PyString_Check(e)){
-		name = PyString_AsString(e);
+	    else if(PyUnicode_Check(e)){
+		name = PyUnicode_AsUTF8(e);
 
 		// la constante debería haberse definido con anterioridad, en otro caso
 		// se trata de un error
@@ -138,10 +136,8 @@ static Literal * buildLiteral(PyObject * args, bool effect){
 	    else {
 		//*errflow << "Python fatal error: Invalid term. ";
 		//*errflow << "While creating literal: " << lit->getName() << endl;
-		Py_DECREF(e);
 		return 0;
 	    }
-	    Py_DECREF(e);
 	}
     }
     else

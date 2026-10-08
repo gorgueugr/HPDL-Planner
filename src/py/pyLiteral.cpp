@@ -4,14 +4,14 @@
 
 #include "hpdl/common/constants.hh"
 #include "hpdl/py/pythonWrapper.hh"
-#include <python2.7/structmember.h>
+#include <structmember.h>
 #include "hpdl/lang/literal.hh"
 #include "hpdl/parser/papi.hh"
 #include "hpdl/lang/effects/literaleffect.hh"
 #include "hpdl/domain/domain.hh"
 #include "hpdl/domain/problem.hh"
 #include "hpdl/lang/goals/literalgoal.hh"
-#include "hpdl/py/pyUTable.cpp"
+#include "pyUTable.cpp"
 #include "hpdl/planner/plan.hh"
 using namespace std;
 
@@ -38,7 +38,7 @@ static void SdxLiteral_dealloc(SdxLiteral * self)
 {
     delete self->l;
     self->l = 0;
-    self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 /**
@@ -69,11 +69,11 @@ static int SdxLiteral_init(SdxLiteral *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    if(!PyString_Check(n)){
+    if(!PyUnicode_Check(n)){
 	return -1;
     }
 
-    name = PyString_AsString(n);
+    name = PyUnicode_AsUTF8(n);
 
     // buscamos si el literal ya está definido en el diccionario de
     // nombres de literales (debería estarlo)
@@ -103,10 +103,10 @@ static PyObject * SdxLiteral_str(SdxLiteral * self){
 
     if(self->l){
 	self->l->printL(&s);
-	result = PyString_FromString(s.str().c_str());
+	result = PyUnicode_FromString(s.str().c_str());
     }
     else{
-	result = PyString_FromString("");
+	result = PyUnicode_FromString("");
     }
     return result;
 };
@@ -131,7 +131,7 @@ static PyObject * SdxLiteral_negate(SdxLiteral * self){
 	else
 	    self->l->setPol(true);
     }
-    return PyInt_FromLong(0);
+    return PyLong_FromLong(0);
 };
 
 static PyObject * SdxLiteral_add_arg(SdxLiteral * self, PyObject *args){
@@ -140,11 +140,11 @@ static PyObject * SdxLiteral_add_arg(SdxLiteral * self, PyObject *args){
     PyTypeObject * sptr = &SdxTermType;
 
     if(self->l == NULL)
-		return PyInt_FromLong(-1);
+		return PyLong_FromLong(-1);
 
     // Capturamos la inicialización dada por el usuario
     if (! PyArg_ParseTuple(args, "O", &n)){
-		return PyInt_FromLong(-1);
+		return PyLong_FromLong(-1);
     }
 
 
@@ -158,13 +158,13 @@ static PyObject * SdxLiteral_add_arg(SdxLiteral * self, PyObject *args){
 		// Esto aporta más flexibilidad a la sintaxis
 		t = PyObject_New(SdxTerm,sptr);
 		if(SdxTerm_init(t, args,NULL)){
-	    	return PyInt_FromLong(-1);
+	    	return PyLong_FromLong(-1);
 		}
 		pkey term = t->t;
 		self->l->addParameter(term);
     }
 
-    return PyInt_FromLong(0);
+    return PyLong_FromLong(0);
 };
 
 static PyObject * SdxLiteral_set_arg(SdxLiteral * self, PyObject *args){
@@ -174,11 +174,11 @@ static PyObject * SdxLiteral_set_arg(SdxLiteral * self, PyObject *args){
     PyTypeObject * sptr = &SdxTermType;
 
     if(self->l == NULL)
-		return PyInt_FromLong(-1);
+		return PyLong_FromLong(-1);
 
     // Capturamos la inicialización dada por el usuario
     if (! PyArg_ParseTuple(args, "iO", &pos, &n)){
-		return PyInt_FromLong(-1);
+		return PyLong_FromLong(-1);
     }
 
 
@@ -192,13 +192,13 @@ static PyObject * SdxLiteral_set_arg(SdxLiteral * self, PyObject *args){
 		// Esto aporta más flexibilidad a la sintaxis
 		t = PyObject_New(SdxTerm,(PyTypeObject *) sptr);
 		if(SdxTerm_init(t, args,NULL)){
-		    return PyInt_FromLong(-1);
+		    return PyLong_FromLong(-1);
 		}
 		pkey term = t->t;
 		self->l->setParameter(pos,term);
     }
 
-    return PyInt_FromLong(0);
+    return PyLong_FromLong(0);
 };
 
 /**
@@ -246,37 +246,37 @@ static PyObject * SdxLiteral_get_unifiers(SdxLiteral * self){
 static PyObject * SdxLiteral_insert_into_state(SdxLiteral * self){
 
     if(self->l == NULL){
-	return PyInt_FromLong(-1);
+	return PyLong_FromLong(-1);
     }
 
     if(!problem){
-	return PyInt_FromLong(-1);
+	return PyLong_FromLong(-1);
     }
 
     if(!current_plan->getState()){
-	return PyInt_FromLong(-1);
+	return PyLong_FromLong(-1);
     }
 
     // Lo único que podemos insertar en el estado es un literaleffect.
     LiteralEffect * tmp = new LiteralEffect(self->l->getId(),self->l->getMetaId(),self->l->getParameters(),self->l->getPol());
     current_plan->addToState((LiteralEffect *)tmp);
 
-    return PyInt_FromLong(0);
+    return PyLong_FromLong(0);
 }
 
 static PyObject * SdxLiteral_delete_from_state(SdxLiteral * self){
 
     if(self->l == NULL){
-	return PyInt_FromLong(-1);
+	return PyLong_FromLong(-1);
     }
 
     if(!current_plan){
-	return PyInt_FromLong(-1);
+	return PyLong_FromLong(-1);
     }
 
     int ret = current_plan->deleteFromState(self->l->getId(),self->l->getParameters());
 
-    return PyInt_FromLong(ret);
+    return PyLong_FromLong(ret);
 
 }
 
@@ -311,58 +311,28 @@ static PyMethodDef SdxLiteral_methods[] = {
 };
 
 static PyTypeObject SdxLiteralType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
-    "siadex.SdxLiteral",             /*tp_name*/
-    sizeof(SdxLiteral),             /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    (destructor) SdxLiteral_dealloc, /*tp_dealloc*/
-    (printfunc) SdxLiteral_print,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    (reprfunc) SdxLiteral_str,                         /*tp_str*/
-    0,                         /*tp_getattro*/
-    0,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    "Siadex Type",           /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    0,		               /* tp_iter */
-    0,		               /* tp_iternext */
-    SdxLiteral_methods,             /* tp_methods */
-    SdxLiteral_members,             /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    (initproc)SdxLiteral_init,      /* tp_init */
-    0,                         /* tp_alloc */
-    SdxLiteral_new,                 /* tp_new */
+    PyVarObject_HEAD_INIT(NULL, 0)
 };
 
 /**
  * Inicialización del módulo
  */
 static void SdxLiteral_initModule(PyObject * m){
-    // Definir los nuevos tipos para siadex
-    PyTypeObject * sptr = &SdxLiteralType;
-    if (PyType_Ready(&SdxLiteralType) < 0)
-		return;
+    SdxLiteralType.tp_name      = "siadex.SdxLiteral";
+    SdxLiteralType.tp_basicsize = sizeof(SdxLiteral);
+    SdxLiteralType.tp_dealloc   = (destructor) SdxLiteral_dealloc;
+    SdxLiteralType.tp_str       = (reprfunc) SdxLiteral_str;
+    SdxLiteralType.tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+    SdxLiteralType.tp_doc       = "Siadex literal";
+    SdxLiteralType.tp_methods   = SdxLiteral_methods;
+    SdxLiteralType.tp_members   = SdxLiteral_members;
+    SdxLiteralType.tp_init      = (initproc) SdxLiteral_init;
+    SdxLiteralType.tp_new       = SdxLiteral_new;
 
+    if (PyType_Ready(&SdxLiteralType) < 0)
+        return;
     Py_INCREF(&SdxLiteralType);
-    PyModule_AddObject(m, "SdxLiteral",(PyObject *) sptr);
+    PyModule_AddObject(m, "SdxLiteral", (PyObject *) &SdxLiteralType);
 }
 
 #endif
