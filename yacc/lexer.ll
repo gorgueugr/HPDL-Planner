@@ -1,4 +1,4 @@
-%option outfile="src/lexer.cpp" noyywrap caseless c++
+%option noyywrap caseless c++
 %{
 
 using namespace std;

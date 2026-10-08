@@ -1,0 +1,3 @@
+# scripts de build: forzar LF aunque el checkout sea Windows (autocrlf)
+*.sh       text eol=lf
+Makefile   text eol=lf

@@ -97,7 +97,7 @@ class PythonWrapper
     void loadFile(const char * name) {};
     void loadStr(const char * code) {};
     bool exec(PyObject * pCode, const Header * func, const Unifier * context, UnifierTable * u, double * res) const{return true;};
-    int execQueue(void);
+    int execQueue(void) {return 0;}
 };
 #endif
 #endif

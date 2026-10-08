@@ -6,7 +6,7 @@
 #include "unifierTable.hh"
 #include "header.hh"
 #include "xmlwriter.hh"
-#include <tr1/unordered_map>
+#include <unordered_map>
 
 using namespace std;
 
@@ -90,7 +90,7 @@ class Literal: public Header
 	const PrimitiveTask * producer;
 };
 
-typedef std::tr1::unordered_multimap<int, Literal *, std::tr1::hash<int>,equal_to<int> > ISTable;
+typedef std::unordered_multimap<int, Literal *, std::hash<int>,equal_to<int> > ISTable;
 typedef ISTable::const_iterator iscit;
 typedef ISTable::iterator isit;
 

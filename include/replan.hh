@@ -4,9 +4,9 @@
 #include "constants.hh"
 #include "selector.hh"
 #include "oldDecision.hh"
-#include <ext/slist>
+#include <list>
 
-typedef __gnu_cxx::slist<int> gislist; 
+typedef std::list<int> gislist; 
 
 using namespace std;
 

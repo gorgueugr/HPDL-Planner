@@ -19,7 +19,20 @@ extern char *readline ();
 #  endif /* !defined(HAVE_READLINE_H) */
 char *cmdline = NULL;
 #else /* !defined(HAVE_READLINE_READLINE_H) */
-/* no readline */
+/* no readline: lector de linea de respaldo (sin historial ni autocompletado) */
+#include <stdio.h>
+#include <string.h>
+static char * simple_read_line(const char * prompt)
+{
+    if(prompt) { fputs(prompt, stdout); fflush(stdout); }
+    std::string line;
+    int ch;
+    while((ch = fgetc(stdin)) != EOF && ch != '\n')
+        line += (char) ch;
+    if(ch == EOF && line.empty())
+        return 0;
+    return strdup(line.c_str());
+}
 #endif /* HAVE_LIBREADLINE */
 
 #ifdef HAVE_READLINE_HISTORY
@@ -117,12 +130,18 @@ char * command_generator (const char * text,int state)
 Debugger::Debugger(void){
     next = true;
     nexp = false;
+#ifdef HAVE_LIBREADLINE
     rl_completion_entry_function = command_generator;
+#endif
     tmpdir = "./";
     viewerCommand = "/usr/bin/display";
     dotPath = "/usr/bin/dot";
     debugger = this;
+#ifdef HAVE_LIBREADLINE
     setFReadLine(readline);
+#else
+    setFReadLine(simple_read_line);
+#endif
 }
 
 Debugger::~Debugger()
@@ -191,6 +210,7 @@ istream * Debugger::preprocessLine(void){
     {
         read = ":debug: ";
         read +=	+ cad;
+#ifdef HAVE_LIBREADLINE
         if(*cad)
         {
             add_history(cad);
@@ -204,6 +224,7 @@ istream * Debugger::preprocessLine(void){
                 read += hisnod->line;
             }
         }
+#endif
         free(cad);
         cad = 0;
     }

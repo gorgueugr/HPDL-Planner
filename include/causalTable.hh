@@ -3,14 +3,14 @@
 
 #include "constants.hh"
 #include "causal.hh"
-#include <tr1/unordered_map>
+#include <unordered_map>
 #include "undoCLinks.hh"
 
-typedef std::tr1::unordered_map<const Task *, CLTable *> CLDictionary;
+typedef std::unordered_map<const Task *, CLTable *> CLDictionary;
 typedef CLDictionary::const_iterator cldcite;
 typedef CLDictionary::iterator cldite;
 
-typedef std::tr1::unordered_map<int, CLTable *> CLIDictionary;
+typedef std::unordered_map<int, CLTable *> CLIDictionary;
 typedef CLIDictionary::const_iterator cclid_ite;
 typedef CLIDictionary::iterator clid_ite;
 

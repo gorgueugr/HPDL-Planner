@@ -4,14 +4,14 @@
 #include "constants.hh"
 #include <string>
 #include <iostream>
-#include <tr1/unordered_map>
+#include <unordered_map>
 #include <ctype.h>
 #ifdef yyFlexLexer
 #undef yyFlexLexer
 #endif
 #include <FlexLexer.h>
 
-typedef std::tr1::unordered_map<std::string, std::string , icaseDJBHash, ieqstr> str_hash;
+typedef std::unordered_map<std::string, std::string , icaseDJBHash, ieqstr> str_hash;
 typedef str_hash::const_iterator str_hashcite;
 typedef str_hash::iterator str_hashite;
 

@@ -1,45 +1,89 @@
 # HPDL-Planner
 
-HPDL-Planner is a Hierarchical Task Network planner supporting partial order compound tasks, temporal and numeric planning.
-You can read more about the planner [here](https://www.aaai.org/Papers/ICAPS/2006/ICAPS06-007.pdf).
+Planificador/optimizador **HTN** (Hierarchical Task Network) con tareas compuestas de
+orden parcial, planificación temporal y numérica. El lenguaje de entrada es **HPDL**.
+Puedes transformar dominios HDDL con [pandaPIparser](https://github.com/panda-planner-dev/pandaPIparser).
 
-The language used by the planner is HPDL, but you can also use the [pandaPIparser](https://github.com/panda-planner-dev/pandaPIparser) to transform from HDDL domains and problems.
+Articulo de referencia: <https://www.aaai.org/Papers/ICAPS/2006/ICAPS06-007.pdf>
 
-## Installation
+---
 
-On the _planner_ directory, write:
+## Compilar y ejecutar
 
-```$ cmake . ``` 
+**Requisitos** (los unicos): `cmake` >= 3.16, `flex`, `libfl-dev`, `bison`, `g++`/`clang++`.
 
-```$ cmake --build . ``` 
+```bash
+sudo apt-get install -y cmake flex libfl-dev bison g++
+```
 
-And an executable called _planner_ will be produced.
+> `libfl-dev` aporta `FlexLexer.h`, que el escaner C++ necesita.
 
-## Requirements
+### Linux / WSL
 
-- __makefile__
-- __cmake__
-- __flex__
-- __bison__
-- __g++__
-- __python-dev__ (a restart will probably be required)
-- __libreadline-dev__ (a restart will probably be required)
+```bash
+./build.sh
+./build/planner -d examples/blocks.hpdl -p examples/blocks-problem.hpdl
+```
 
-## Usage
+O con `make`:
 
-Syntax: 
+```bash
+make                 # compila -> build/planner
+make example         # compila y resuelve el ejemplo incluido
+make run ARGS="-d mi_dominio.hpdl -p mi_problema.hpdl"
+make distclean       # borra build/
+```
 
-```$ ./planner [options] --domain_file (-d) <domain.hpdl> --problem_file (-p) <problem.hpdl>```
+### Windows
 
-See: 
+El codigo usa APIs POSIX (`getopt.h`, `pthread.h`), por lo que se compila dentro de
+**WSL** (recomendado) o de cualquier Linux/contenedor:
 
-```$ ./planner --help``` 
+```powershell
+wsl -e bash -lc "cd /mnt/c/Users/soler/Desktop/void/projects/HPDL-Planner && ./build.sh"
+wsl -e bash -lc "cd /mnt/c/Users/soler/Desktop/void/projects/HPDL-Planner && ./build/planner -d examples/blocks.hpdl -p examples/blocks-problem.hpdl"
+```
 
-for more information.
+---
 
-## Citation
+## Uso
 
-If you would like to cite this planner in an scientific publication, please refer to this [paper](https://www.aaai.org/Papers/ICAPS/2006/ICAPS06-007.pdf):
+```
+planner [opciones] --domain_file (-d) <dominio.hpdl> --problem_file (-p) <problema.hpdl>
+planner --help
+```
+
+| Opcion | Efecto |
+|---|---|
+| `-v[1-3]` | nivel de detalle por pantalla |
+| `-g` | depurador integrado |
+| `-o <fichero>` | escribe el plan en texto plano |
+| `-x <fichero>` | escribe el plan en XML |
+| `--time_limit <s>` / `--depth_limit <n>` / `--expansions_limit <n>` | limites |
+| `-s <n>` | semilla aleatoria |
+
+El problema debe expresar su objetivo como red de tareas HTN:
+
+```
+(:tasks-goal
+   :tasks (make-on a b))
+```
+
+En `examples/` hay un dominio Blocksworld HTN minimo (`blocks.hpdl` +
+`blocks-problem.hpdl`) cuyo plan es `(pick-up a)` y `(stack a b)`.
+
+---
+
+## Notas de mantenimiento
+
+- **Compila sin Python 2.7 ni readline.** Se eliminaron ambos del build (eran la causa
+  principal de que no compilase). El interprete Python 2.7 embebido (legacy) se puede
+  reactivar explicitamente con `cmake -DHPDL_ENABLE_PYTHON=ON`.
+- Estandar **C++14**, probado con `g++ 13` y Bison 3.8 / Flex 2.6.
+- El build es *out-of-source* (`build/`); no deja `parser.cpp`/`lexer.cpp` dentro del
+  arbol de fuentes.
+
+## Cita
 
 ```bibtex
 @inproceedings{fdez2006bringing,
