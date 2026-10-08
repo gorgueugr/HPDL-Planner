@@ -2,10 +2,6 @@
 #include <sstream>
 #include <algorithm>
 
-#ifdef BUFFER_STACK
-#define yy_current_buffer *yy_buffer_stack
-#endif
-
 extern ifstream * openfile(const char * fileName);
 
 MyLexer::MyLexer(istream* arg_yyin, ostream* arg_yyout)
@@ -105,10 +101,9 @@ void MyLexer::switchTo(string file){
     c.fileName = fileName;
     c.line = lineNum;
     c.flow = flow;
-    c.buffer = yy_current_buffer;
     stack.push_back(c);
 
-    yy_switch_to_buffer(yy_create_buffer((istream*)flow,256));
+    yypush_buffer_state(yy_create_buffer((istream*)flow,256));
 };
 
 bool MyLexer::restore(void){
@@ -120,7 +115,6 @@ bool MyLexer::restore(void){
     stack.pop_back();
     fileName = c.fileName;
     lineNum = c.line;
-    yy_delete_buffer(yy_current_buffer);
-    yy_switch_to_buffer(c.buffer);
+    yypop_buffer_state();
     return true;
 };

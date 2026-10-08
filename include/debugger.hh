@@ -4,7 +4,7 @@
 #include "constants.hh"
 #include <string>
 #include <iostream>
-#include <tr1/unordered_map>
+#include <unordered_map>
 #include <ctype.h>
 #include "MyLexer.hh"
 #include "constants.hh"
@@ -18,7 +18,7 @@
 #include "plan.hh"
 
 
-typedef std::tr1::unordered_map<std::string, std::string , icaseDJBHash, ieqstr> Dictionary;
+typedef std::unordered_map<std::string, std::string , icaseDJBHash, ieqstr> Dictionary;
 
 using namespace std;
 

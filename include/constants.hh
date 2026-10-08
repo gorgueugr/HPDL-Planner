@@ -13,6 +13,8 @@
 #include <iostream>
 #include <algorithm>
 #include <cctype>
+#include <cstdint>   // INT32_MAX (fluentVar.hh)
+#include <climits>   // INT_MAX   (undoChangeValue.cpp)
 
 using namespace std;
 

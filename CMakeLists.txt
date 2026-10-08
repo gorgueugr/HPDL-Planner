@@ -1,178 +1,77 @@
-cmake_minimum_required(VERSION 2.8.12)
-project(siadex_planner)
+cmake_minimum_required(VERSION 3.16)
+project(hpdl_planner LANGUAGES CXX)
 
-#Set headers directory
-include_directories("include")
+# ---------------------------------------------------------------------------
+# HPDL-Planner -- build minimo y actualizado.
+#   Requisitos: cmake >= 3.16, flex, bison, g++/clang++.
+#   Sin Python 2.7 ni readline.
+#
+#   cmake -S . -B build
+#   cmake --build build -j
+#   ./build/planner --help
+# ---------------------------------------------------------------------------
 
-#Set source files
-file(GLOB SOURCES "src/*.cpp")
-list(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tcnm-ac3.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/tcnm-pc2.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/tcnm-pc2-cl.cpp")
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
 
-set(EXTRALIBS "-lhistory -ltermcap -ll")
+set(CMAKE_CXX_STANDARD 14)          # C++17 rompe por ambiguedad de std::data (check.cpp)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-#Set python vars
-#Compiler flags
-#El uso de echo es para eliminar el salto de linea que producen los python.config
-execute_process(COMMAND python-config --cflags OUTPUT_VARIABLE PYTHON_CPPFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
-#Libraries
-execute_process(COMMAND python-config --libs OUTPUT_VARIABLE PYTHON_EXTRA_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
-#Linker flags
-execute_process(COMMAND python-config --ldflags OUTPUT_VARIABLE PYTHON_LDFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
+option(HPDL_ENABLE_PYTHON "Soporte Python 2.7 embebido (legacy, desactivado)" OFF)
 
+# --- Generadores de parser/lexer -------------------------------------------
+find_package(FLEX REQUIRED)
+find_package(BISON REQUIRED)
 
-
-#Concatenate the new flags with the old ones
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${PYTHON_CPPFLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PYTHON_CPPFLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${PYTHON_LDFLAGS}")
-
-#Define automated preprocessor directives if exists a lib
-if(EXISTS /usr/include/readline.h)
-  add_definitions(-DHAVE_LIBREADLINE)
-  add_definitions(-DHAVE_READLINE_H)
-endif(EXISTS /usr/include/readline.h)
-
-if(EXISTS /usr/include/readline/readline.h)
-  add_definitions(-DHAVE_LIBREADLINE)
-  add_definitions(-DHAVE_READLINE_READLINE_H)
-endif(EXISTS /usr/include/readline/readline.h)
-
-if(EXISTS /usr/include/history.h)
-  add_definitions(-DHAVE_READLINE_HISTORY)
-  add_definitions(-DHAVE_HISTORY_H)
-endif(EXISTS /usr/include/history.h)
-
-if(EXISTS /usr/include/readline/history.h)
-  add_definitions(-DHAVE_READLINE_HISTORY)
-  add_definitions(-DHAVE_READLINE_HISTORY_H)
-endif(EXISTS /usr/include/readline/history.h)
-
-foreach( d ${DirDefs} )
-    message( STATUS "Found Define: " ${d} )
-endforeach()
-message( STATUS "DirDefs: " ${DirDefs} )
-
-if(EXISTS /usr/include/fcntl.h)
-  add_definitions(-DHAVE_FCNTL_H)
-endif(EXISTS /usr/include/fcntl.h)
-
-if(EXISTS /usr/include/inttypes.h)
-  add_definitions(-DHAVE_INTTYPES_H)
-endif(EXISTS /usr/include/inttypes.h)
-
-if(EXISTS /usr/include/memory.h)
-  add_definitions(-DHAVE_MEMORY_H)
-endif(EXISTS /usr/include/memory.h)
-
-if(EXISTS /usr/include/netdb.h)
-  add_definitions(-DHAVE_NETDB_H)
-endif(EXISTS /usr/include/netdb.h)
-
-if(EXISTS /usr/include/netinet/in.h)
-  add_definitions(-DHAVE_NETINET_IN_H)
-endif(EXISTS /usr/include/netinet/in.h)
-
-if(EXISTS /usr/include/c++/4.8/tr1/stdbool.h)
-  add_definitions(-DHAVE_STDBOOL_H)
-endif(EXISTS /usr/include/c++/4.8/tr1/stdbool.h)
-
-if(EXISTS /usr/include/linux/stddef.h)
-  add_definitions(-DHAVE_STDDEF_H)
-endif(EXISTS /usr/include/linux/stddef.h)
-
-if(EXISTS /usr/include/stdint.h)
-  add_definitions(-DHAVE_STDINT_H)
-endif(EXISTS /usr/include/stdint.h)
-
-if(EXISTS /usr/include/stdlib.h)
-  add_definitions(-DHAVE_STDLIB_H)
-endif(EXISTS /usr/include/stdlib.h)
-
-if(EXISTS /usr/include/strings.h)
-  add_definitions(-DHAVE_STRINGS_H)
-endif(EXISTS /usr/include/strings.h)
-
-if(EXISTS /usr/include/string.h)
-  add_definitions(-DHAVE_STRING_H)
-endif(EXISTS /usr/include/string.h)
-
-if(EXISTS /usr/include/x86_64-linux-gnu/sys/select.h)
-  add_definitions(-DHAVE_SYS_SELECT_H)
-endif(EXISTS /usr/include/x86_64-linux-gnu/sys/select.h)
-
-if(EXISTS /usr/include/x86_64-linux-gnu/sys/socket.h)
-  add_definitions(-DHAVE_SYS_SOCKET_H)
-endif(EXISTS /usr/include/x86_64-linux-gnu/sys/socket.h)
-
-if(EXISTS /usr/include/x86_64-linux-gnu/sys/stat.h)
-  add_definitions(-DHAVE_SYS_STAT_H)
-endif(EXISTS /usr/include/x86_64-linux-gnu/sys/stat.h)
-
-if(EXISTS /usr/include/x86_64-linux-gnu/sys/timeb.h)
-  add_definitions(-DHAVE_SYS_TIMEB_H)
-endif(EXISTS /usr/include/x86_64-linux-gnu/sys/timeb.h)
-
-if(EXISTS /usr/include/x86_64-linux-gnu/sys/time.h)
-  add_definitions(-DHAVE_SYS_TIME_H)
-endif(EXISTS /usr/include/x86_64-linux-gnu/sys/time.h)
-
-if(EXISTS /usr/include/x86_64-linux-gnu/sys/types.h)
-  add_definitions(-DHAVE_SYS_TYPES_H)
-endif(EXISTS /usr/include/x86_64-linux-gnu/sys/types.h)
-
-if(EXISTS /usr/include/unistd.h)
-  add_definitions(-DHAVE_UNISTD_H)
-endif(EXISTS /usr/include/unistd.h)
-
-if(EXISTS /usr/include/python2.7)
-  add_definitions(-DPYTHON_FOUND)
-endif(EXISTS /usr/include/python2.7)
-
-add_definitions(-DHAVE_FTIME)
-add_definitions(-DHAVE_GETHOSTBYNAME)
-add_definitions(-DHAVE_GETTIMEOFDAY)
-add_definitions(-DHAVE_MALLOC)
-add_definitions(-DHAVE_MEMSET)
-add_definitions(-DHAVE_NAMESPACES)
-add_definitions(-DHAVE_REALLOC)
-add_definitions(-DHAVE_SELECT)
-add_definitions(-DHAVE_SOCKET)
-add_definitions(-DHAVE_STL)
-add_definitions(-DHAVE_STRCASECMP)
-add_definitions(-DHAVE_STRDUP)
-add_definitions(-DHAVE_STRNCASECMP)
-add_definitions(-DHAVE_STRTOL)
-add_definitions(-DHAVE__BOOL)
-add_definitions(-DSTDC_HEADERS)
-add_definitions(-DTIME_WITH_SYS_TIME)
-add_definitions(-DYYTEXT_POINTER)
-add_definitions(-DBUFFER_STACK)
-
-#Build commands for Flex and Bison
-find_package(FLEX)
-find_package(BISON)
-
-BISON_TARGET(parser yacc/parser.yy src/parser.cpp)
-FLEX_TARGET(lexer  yacc/lexer.ll src/lexer.cpp)
-
+BISON_TARGET(parser "${CMAKE_CURRENT_SOURCE_DIR}/yacc/parser.yy"
+             "${CMAKE_CURRENT_BINARY_DIR}/parser.cpp"
+             DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/parser.hh")
+FLEX_TARGET(lexer "${CMAKE_CURRENT_SOURCE_DIR}/yacc/lexer.ll"
+            "${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp")
 ADD_FLEX_BISON_DEPENDENCY(lexer parser)
 
+# --- Fuentes ----------------------------------------------------------------
+file(GLOB SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
-#add_custom_command(OUTPUT planner
-  #COMMAND add_definitions(-DUSE_PC2)
-  #COMMAND list(APPEND SOURCES src/tcnm-pc2.cpp)
+# Variantes alternativas de propagacion temporal: solo se usa la de AC3
+# (USE_AC3, mas abajo). Las PC2/PC2-CL no se compilan nunca.
+list(REMOVE_ITEM SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/tcnm-pc2.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/tcnm-pc2-cl.cpp"
+  # restos de flex/bison generados dentro del arbol de fuentes
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/parser.cpp")
 
-#)
-#add_definitions(-DUSE_PC2)
-#list(APPEND SOURCES src/tcnm-pc2.cpp)
-#add_definitions(-DUSE_PC2_CL)
-#list(APPEND SOURCES src/tcnm-pc2-cl.cpp)
+if(NOT HPDL_ENABLE_PYTHON)
+  # Estos ficheros solo tienen sentido con el interprete Python 2.7 embebido.
+  list(REMOVE_ITEM SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/pyAPI.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/pyLiteral.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/pyTerm.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/pyUTable.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/pythonWrapper.cpp")
+endif()
 
-#Define preprocessor directives for stacknode.cpp
-add_definitions(-DUSE_AC3)
-list(APPEND SOURCES src/tcnm-ac3.cpp)
+add_executable(planner
+  ${BISON_parser_OUTPUTS}
+  ${FLEX_lexer_OUTPUTS}
+  ${SOURCES})
 
-#Add a binary executable
-add_executable(planner nodes/planner.cpp ${BISON_parser_OUTPUTS} ${FLEX_lexer_OUTPUTS} ${SOURCES})
-#And link it
-target_link_libraries(planner python2.7 readline ${EXTRALIBS} ${PYTHON_EXTRA_LIBS})
+target_include_directories(planner PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${CMAKE_CURRENT_BINARY_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src"   # fluentOperator.hh vive junto a sus fuentes
+  ${FLEX_INCLUDE_DIRS})
+
+# Red de propagacion de restricciones temporales usada por el planificador.
+target_compile_definitions(planner PRIVATE USE_AC3)
+
+if(HPDL_ENABLE_PYTHON)
+  find_package(Python2 REQUIRED COMPONENTS Development)
+  target_compile_definitions(planner PRIVATE PYTHON_FOUND)
+  target_link_libraries(planner PRIVATE Python2::Python)
+endif()
+
+install(TARGETS planner RUNTIME DESTINATION bin)

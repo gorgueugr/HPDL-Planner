@@ -4,7 +4,7 @@
 #include "constants.hh"
 #include <iostream>
 #include <assert.h>
-#include <ext/slist>
+#include <list>
 #include "undoElement.hh"
 #include "constants.hh"
 #include "causal.hh"
@@ -17,7 +17,7 @@ typedef pair<int,vector<Type *> *> TypeSubstitution;
 typedef vector<TypeSubstitution> vTSubstitutions;
 typedef vector<TypeSubstitution>::iterator typesubite;
 
-typedef __gnu_cxx::slist<pair<int,pair<int,float> > > vSubstitutions;
+typedef std::list<pair<int,pair<int,float> > > vSubstitutions;
 typedef vSubstitutions::const_iterator subscit;
 typedef vSubstitutions::iterator subsit;
 
