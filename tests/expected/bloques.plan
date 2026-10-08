@@ -1,0 +1,6 @@
+:action (desapilar C B)
+:action (dejar C)
+:action (desapilar B A)
+:action (dejar B)
+:action (coger A)
+:action (apilar A C)

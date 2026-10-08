@@ -1,0 +1,24 @@
+(define (domain move)
+  (:requirements :strips :htn-expansion)
+
+  (:predicates
+     (at ?x ?p)
+     (free ?p)
+     (holding ?x)
+     (hand-empty))
+
+  (:action pick
+     :parameters (?x ?p)
+     :precondition (and (at ?x ?p) (hand-empty))
+     :effect (and (not (at ?x ?p)) (not (hand-empty)) (holding ?x) (free ?p)))
+
+  (:action drop
+     :parameters (?x ?p)
+     :precondition (and (holding ?x) (free ?p))
+     :effect (and (not (holding ?x)) (not (free ?p)) (at ?x ?p) (hand-empty)))
+
+  (:task carry
+     :parameters (?x ?from ?to)
+     (:method do-carry
+        :tasks ( (pick ?x ?from) (drop ?x ?to) )))
+)

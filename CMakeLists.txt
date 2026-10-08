@@ -103,4 +103,35 @@ else()
                  "instala python3-dev y reconfigura, o usa -DHPDL_PYTHON=ON)")
 endif()
 
+# ---------------------------------------------------------------------------
+# Tests (integracion, sin dependencias externas)
+#   cmake --build build && ctest --test-dir build --output-on-failure
+#   o directamente:  tests/run_tests.sh build/planner
+# ---------------------------------------------------------------------------
+option(HPDL_BUILD_TESTS "Registrar la bateria de tests en CTest" ON)
+
+if(HPDL_BUILD_TESTS)
+  enable_testing()
+  set(HPDL_TESTS
+    binario_existe ayuda sin_argumentos parse_blocks parse_move
+    plan_blocks plan_move plan_bloques determinismo
+    rechaza_goal_plano rechaza_sintaxis rechaza_dominio_incorrecto
+    salida_texto salida_xml arbol format_output
+    includes_resueltos gramatica_sincronizada sin_python2 layout
+    sin_flex_bison_en_cmake parser_reproducible)
+  foreach(t ${HPDL_TESTS})
+    add_test(NAME ${t}
+             COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/tests/run_tests.sh"
+                          "$<TARGET_FILE:planner>" ${t})
+    set_tests_properties(${t} PROPERTIES SKIP_RETURN_CODE 77)
+  endforeach()
+
+  # 'make check' compila y ejecuta toda la bateria
+  add_custom_target(check
+    COMMAND "${CMAKE_CTEST_COMMAND}" --output-on-failure
+    DEPENDS planner
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    USES_TERMINAL)
+endif()
+
 install(TARGETS planner RUNTIME DESTINATION bin)

@@ -120,6 +120,21 @@ nombre suelto, asi que basta con anadir `include/` al *include path*.
 
 ---
 
+## Tests
+
+Bateria de tests de integracion (22 tests, sin dependencias externas), pensada para
+detectar regresiones en el build, el parser, la planificacion y la estructura del repo:
+
+```bash
+./build.sh && ctest --test-dir build --output-on-failure   # con CTest
+make check                                                 # compila y ejecuta todo
+tests/run_tests.sh build/planner                           # sin cmake
+```
+
+Detalle de lo que cubre (y de sus limitaciones conocidas) en `tests/README.md`.
+
+---
+
 ## Regenerar la gramatica
 
 `generated/` se versiona para que compilar no requiera `flex` ni `bison`. Para que no se

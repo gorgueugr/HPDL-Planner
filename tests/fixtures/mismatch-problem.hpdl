@@ -1,0 +1,5 @@
+(define (problem otro)
+  (:domain no-existe)
+  (:objects a)
+  (:init (ontable a))
+  (:tasks-goal :tasks (make-on a a)))

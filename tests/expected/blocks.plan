@@ -1,0 +1,2 @@
+:action (pick-up a)
+:action (stack a b)

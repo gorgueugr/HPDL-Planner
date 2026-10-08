@@ -1,0 +1,3 @@
+(define (domain roto)
+  (:requirements :strips)
+  (:predicates (p ?x)

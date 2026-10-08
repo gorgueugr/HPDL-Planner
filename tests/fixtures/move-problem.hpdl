@@ -1,0 +1,5 @@
+(define (problem move-1)
+  (:domain move)
+  (:objects a b c)
+  (:init (at a b) (free a) (free c) (hand-empty))
+  (:tasks-goal :tasks (carry a b c)))

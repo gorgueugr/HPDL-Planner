@@ -1,0 +1,6 @@
+==>
+1 pick-up a
+2 stack a b
+root 0
+0 make-on a b -> do-stack 1 2
+<==
