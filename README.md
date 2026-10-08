@@ -11,13 +11,15 @@ Articulo de referencia: <https://www.aaai.org/Papers/ICAPS/2006/ICAPS06-007.pdf>
 
 ## Compilar y ejecutar
 
-**Requisitos** (los unicos): `cmake` >= 3.16, `flex`, `libfl-dev`, `bison`, `g++`/`clang++`.
+**Requisitos** (los unicos): `cmake` >= 3.16 y un compilador de C++ (`g++` o `clang++`).
 
 ```bash
-sudo apt-get install -y cmake flex libfl-dev bison g++
+sudo apt-get install -y cmake g++
 ```
 
-> `libfl-dev` aporta `FlexLexer.h`, que el escaner C++ necesita.
+> No hacen falta `flex`, `bison` ni `libfl-dev`: el parser y el escaner se entregan ya
+> generados en `generated/`, y el `FlexLexer.h` que necesitan esta en `third_party/flex/`.
+> Solo los necesitas si modificas la gramatica (ver *Regenerar la gramatica*).
 
 ### Linux / WSL
 
@@ -90,8 +92,10 @@ include/hpdl/<subsistema>/   cabeceras
 src/<subsistema>/            implementaciones (misma subdivision que include/)
 src/planner.cpp              main
 yacc/                        gramatica (parser.yy) y escaner (lexer.ll)
+generated/                   parser.cpp / parser.hh / lexer.cpp YA generados (se versionan)
+third_party/flex/            FlexLexer.h (evita depender del paquete libfl-dev)
 examples/                    dominios y problemas de ejemplo
-tools/                       utilidades (format_output.py)
+tools/                       utilidades (format_output.py, regenerate_parser.sh)
 build/                       generado por CMake (ignorado por git)
 ```
 
@@ -113,6 +117,21 @@ build/                       generado por CMake (ignorado por git)
 
 Los `#include` son **cualificados** (`#include "hpdl/planner/plan.hh"`) en vez de por
 nombre suelto, asi que basta con anadir `include/` al *include path*.
+
+---
+
+## Regenerar la gramatica
+
+`generated/` se versiona para que compilar no requiera `flex` ni `bison`. Para que no se
+compilen parsers desincronizados, el build compara la huella de `yacc/parser.yy` y
+`yacc/lexer.ll` con `generated/grammar.sha256` y aborta si no coinciden.
+
+Tras modificar la gramatica:
+
+```bash
+sudo apt-get install -y flex bison
+tools/regenerate_parser.sh
+```
 
 ---
 

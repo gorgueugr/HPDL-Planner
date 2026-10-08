@@ -10,7 +10,6 @@ bool FLAG_TRUSTED=true;
 #include "hpdl/domain/domain.hh"
 #include "hpdl/domain/problem.hh"
 #include "hpdl/parser/papi.hh"
-#include <pthread.h>
 #include "hpdl/py/pyAPI.cpp"
 
 using namespace std;

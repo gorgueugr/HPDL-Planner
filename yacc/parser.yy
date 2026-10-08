@@ -8,7 +8,6 @@
     #include <stdlib.h>
     #include <assert.h>
     #include <vector>
-    #include <sys/resource.h>
     #include <math.h>
     #include <malloc.h>
     #include <ctype.h>
