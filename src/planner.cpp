@@ -3,7 +3,7 @@
  * Last modified: o.garcia vie 31 oct, 2008  01:49
  * ********************************************************************************** */
 
-#include "constants.hh"
+#include "hpdl/common/constants.hh"
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
@@ -13,15 +13,15 @@
 #include <malloc.h>
 #include <pthread.h>
 #include <getopt.h>
-#include "debugger.hh"
-#include "termTable.hh"
-#include "pythonWrapper.hh"
-#include "papi.hh"
-#include "problem.hh"
-#include "controlrules.hh"
-#include "selector.hh"
-#include "replan.hh"
-#include "plan.hh"
+#include "hpdl/debug/debugger.hh"
+#include "hpdl/common/termTable.hh"
+#include "hpdl/py/pythonWrapper.hh"
+#include "hpdl/parser/papi.hh"
+#include "hpdl/domain/problem.hh"
+#include "hpdl/planner/controlrules.hh"
+#include "hpdl/planner/selector.hh"
+#include "hpdl/planner/replan.hh"
+#include "hpdl/planner/plan.hh"
 
 using namespace std;
 

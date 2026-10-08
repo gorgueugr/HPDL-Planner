@@ -3,12 +3,14 @@ project(hpdl_planner LANGUAGES CXX)
 
 # ---------------------------------------------------------------------------
 # HPDL-Planner -- build minimo y actualizado.
-#   Requisitos: cmake >= 3.16, flex, bison, g++/clang++.
+#   Requisitos: cmake >= 3.16, flex, libfl-dev, bison, g++/clang++.
 #   Sin Python 2.7 ni readline.
 #
 #   cmake -S . -B build
 #   cmake --build build -j
 #   ./build/planner --help
+#
+# Estructura: include/hpdl/<subsistema>/ y src/<subsistema>/ (ver README).
 # ---------------------------------------------------------------------------
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -33,13 +35,13 @@ FLEX_TARGET(lexer "${CMAKE_CURRENT_SOURCE_DIR}/yacc/lexer.ll"
 ADD_FLEX_BISON_DEPENDENCY(lexer parser)
 
 # --- Fuentes ----------------------------------------------------------------
-file(GLOB SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 # Variantes alternativas de propagacion temporal: solo se usa la de AC3
 # (USE_AC3, mas abajo). Las PC2/PC2-CL no se compilan nunca.
 list(REMOVE_ITEM SOURCES
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/tcnm-pc2.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/tcnm-pc2-cl.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/constraints/tcnm-pc2.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/constraints/tcnm-pc2-cl.cpp"
   # restos de flex/bison generados dentro del arbol de fuentes
   "${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/parser.cpp")
@@ -47,11 +49,11 @@ list(REMOVE_ITEM SOURCES
 if(NOT HPDL_ENABLE_PYTHON)
   # Estos ficheros solo tienen sentido con el interprete Python 2.7 embebido.
   list(REMOVE_ITEM SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/pyAPI.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/pyLiteral.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/pyTerm.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/pyUTable.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/pythonWrapper.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyAPI.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyLiteral.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyTerm.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyUTable.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pythonWrapper.cpp")
 endif()
 
 add_executable(planner
@@ -60,9 +62,8 @@ add_executable(planner
   ${SOURCES})
 
 target_include_directories(planner PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/include"
-  "${CMAKE_CURRENT_BINARY_DIR}"
-  "${CMAKE_CURRENT_SOURCE_DIR}/src"   # fluentOperator.hh vive junto a sus fuentes
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"     # -> #include "hpdl/<subsistema>/..."
+  "${CMAKE_CURRENT_BINARY_DIR}"             # -> parser.hh / lexer.cpp generados
   ${FLEX_INCLUDE_DIRS})
 
 # Red de propagacion de restricciones temporales usada por el planificador.

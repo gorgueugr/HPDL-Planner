@@ -1,8 +1,9 @@
 # HPDL-Planner
 
 Planificador/optimizador **HTN** (Hierarchical Task Network) con tareas compuestas de
-orden parcial, planificación temporal y numérica. El lenguaje de entrada es **HPDL**.
-Puedes transformar dominios HDDL con [pandaPIparser](https://github.com/panda-planner-dev/pandaPIparser).
+orden parcial, planificacion temporal y numerica. El lenguaje de entrada es **HPDL**;
+tambien puedes transformar dominios HDDL con
+[pandaPIparser](https://github.com/panda-planner-dev/pandaPIparser).
 
 Articulo de referencia: <https://www.aaai.org/Papers/ICAPS/2006/ICAPS06-007.pdf>
 
@@ -21,7 +22,7 @@ sudo apt-get install -y cmake flex libfl-dev bison g++
 ### Linux / WSL
 
 ```bash
-./build.sh
+./build.sh                                                                  # -> build/planner
 ./build/planner -d examples/blocks.hpdl -p examples/blocks-problem.hpdl
 ```
 
@@ -29,15 +30,15 @@ O con `make`:
 
 ```bash
 make                 # compila -> build/planner
-make example         # compila y resuelve el ejemplo incluido
+make example         # compila y resuelve el ejemplo minimo
 make run ARGS="-d mi_dominio.hpdl -p mi_problema.hpdl"
 make distclean       # borra build/
 ```
 
 ### Windows
 
-El codigo usa APIs POSIX (`getopt.h`, `pthread.h`), por lo que se compila dentro de
-**WSL** (recomendado) o de cualquier Linux/contenedor:
+El codigo usa APIs POSIX (`getopt.h`, `pthread.h`), asi que se compila dentro de **WSL**
+(recomendado) o de cualquier Linux/contenedor:
 
 ```powershell
 wsl -e bash -lc "cd /mnt/c/Users/soler/Desktop/void/projects/HPDL-Planner && ./build.sh"
@@ -56,76 +57,77 @@ planner --help
 | Opcion | Efecto |
 |---|---|
 | `-v[1-3]` | nivel de detalle por pantalla |
+| `-t` | imprime el arbol de descomposicion del plan |
 | `-g` | depurador integrado |
 | `-o <fichero>` | escribe el plan en texto plano |
 | `-x <fichero>` | escribe el plan en XML |
 | `--time_limit <s>` / `--depth_limit <n>` / `--expansions_limit <n>` | limites |
 | `-s <n>` | semilla aleatoria |
 
-El problema debe expresar su objetivo como red de tareas HTN:
+El problema debe expresar su objetivo como red de tareas HTN (no admite *goals* PDDL planos):
 
 ```
 (:tasks-goal
    :tasks (make-on a b))
 ```
 
-En `examples/` hay un dominio Blocksworld HTN minimo (`blocks.hpdl` +
-`blocks-problem.hpdl`) cuyo plan es `(pick-up a)` y `(stack a b)`.
+`tools/format_output.py` convierte la salida de `-t` al arbol de descomposicion en el
+formato del validador de pandaPIparser:
+
+```bash
+./build/planner -t -d examples/blocks.hpdl -p examples/blocks-problem.hpdl > plan.txt
+python3 tools/format_output.py plan.txt
+```
+
+Los dominios/problemas de ejemplo estan en `examples/` (ver `examples/README.md`).
+
+---
+
+## Estructura del codigo
+
+```
+include/hpdl/<subsistema>/   cabeceras
+src/<subsistema>/            implementaciones (misma subdivision que include/)
+src/planner.cpp              main
+yacc/                        gramatica (parser.yy) y escaner (lexer.ll)
+examples/                    dominios y problemas de ejemplo
+tools/                       utilidades (format_output.py)
+build/                       generado por CMake (ignorado por git)
+```
+
+| Subsistema | Contenido |
+|---|---|
+| `common/` | base: terminos, tipos, tabla de terminos, simbolos, meta, constantes |
+| `lang/` | lenguaje de dominio: literales, fluentes, funciones, axiomas |
+| `lang/goals/` | tipos de objetivo (`and`, `or`, `forall`, `exists`, `imply`, `sort`, ...) |
+| `lang/effects/` | tipos de efecto (`and`, `forall`, `when`, fluentes, temporales) |
+| `htn/` | tareas, metodos y redes de tareas |
+| `domain/` | dominio y problema |
+| `planner/` | motor: plan, agenda (`stacknode`), causalidad, reglas de control |
+| `constraints/` | red de restricciones temporales (TCNM/AC3) |
+| `unify/` | unificacion de terminos |
+| `undo/` | deshacer cambios de estado |
+| `parser/` | API del parser, escaner de entrada, XML y textos |
+| `py/` | interprete Python 2.7 embebido (opcional, desactivado) |
+| `debug/` | depurador integrado |
+
+Los `#include` son **cualificados** (`#include "hpdl/planner/plan.hh"`) en vez de por
+nombre suelto, asi que basta con anadir `include/` al *include path*.
 
 ---
 
 ## Notas de mantenimiento
 
-- **Compila sin Python 2.7 ni readline.** Se eliminaron ambos del build (eran la causa
-  principal de que no compilase). El interprete Python 2.7 embebido (legacy) se puede
-  reactivar explicitamente con `cmake -DHPDL_ENABLE_PYTHON=ON`.
-- Estandar **C++14**, probado con `g++ 13` y Bison 3.8 / Flex 2.6.
-- El build es *out-of-source* (`build/`); no deja `parser.cpp`/`lexer.cpp` dentro del
-  arbol de fuentes.
+- **Sin Python 2.7 ni readline.** Se quitaron ambos del build (eran la causa principal de
+  que no compilase). El interprete Python 2.7 embebido (legacy) se puede reactivar con
+  `cmake -DHPDL_ENABLE_PYTHON=ON`; entonces `examples/bloques.hpdl` tambien funciona.
+- Estandar **C++14**, probado con `g++ 13`, Bison 3.8 y Flex 2.6.
+  (C++17 rompe por ambiguedad de `std::data` en `src/common/check.cpp`.)
+- Build *out-of-source*: no deja `parser.cpp` / `lexer.cpp` dentro del arbol de fuentes.
+
+---
 
 ## Cita
-HPDL-Planner (also known as SIADEX) is a Hierarchical Task Network planner supporting partial order compound tasks, temporal and numeric planning.
-You can read more about the planner [here](https://www.aaai.org/Papers/ICAPS/2006/ICAPS06-007.pdf).
-
-The language used by the planner is HPDL, but you can also use the [pandaPIparser](https://github.com/panda-planner-dev/pandaPIparser) to transform from HDDL domains and problems.
-
-## Installation
-
-On the _planner_ directory, write:
-
-```$ cmake . ``` 
-
-```$ cmake --build . ``` 
-
-And an executable called _planner_ will be produced.
-
-## Requirements
-
-- __makefile__
-- __cmake__
-- __flex__
-- __bison__
-- __g++__
-- __python-dev__ (a restart will probably be required)
-- __libreadline-dev__ (a restart will probably be required)
-
-## Usage
-
-Syntax: 
-
-```$ ./planner [options] --domain_file (-d) <domain.hpdl> --problem_file (-p) <problem.hpdl>```
-
-See: 
-
-```$ ./planner --help``` 
-
-for more information.
-
-With the script ``format_output.py`` you can get a decomposition tree of the resulting plan.
-
-## Citation
-
-If you would like to cite this planner in an scientific publication, please refer to this [paper](https://www.aaai.org/Papers/ICAPS/2006/ICAPS06-007.pdf):
 
 ```bibtex
 @inproceedings{fdez2006bringing,
