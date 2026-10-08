@@ -3,13 +3,13 @@ build/
 *.o
 *.a
 
-# --- generados por flex/bison ---
-parser.cpp
-parser.hh
-parser.output
-lexer.cpp
-stack.hh
-location.hh
+# generados por flex/bison si se compila in-source (el build normal es out-of-source)
+/parser.cpp
+/parser.hh
+/parser.output
+/lexer.cpp
+/stack.hh
+/location.hh
 
 # --- editor / sistema ---
 *~

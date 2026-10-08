@@ -7,11 +7,8 @@
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
-#include <sys/resource.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
-#include <pthread.h>
 #include <getopt.h>
 #include "hpdl/debug/debugger.hh"
 #include "hpdl/common/termTable.hh"

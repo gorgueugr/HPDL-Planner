@@ -2,15 +2,19 @@ cmake_minimum_required(VERSION 3.16)
 project(hpdl_planner LANGUAGES CXX)
 
 # ---------------------------------------------------------------------------
-# HPDL-Planner -- build minimo y actualizado.
-#   Requisitos: cmake >= 3.16, flex, libfl-dev, bison, g++/clang++.
-#   Sin Python 2.7 ni readline.
+# HPDL-Planner -- build minimo.
 #
-#   cmake -S . -B build
-#   cmake --build build -j
-#   ./build/planner --help
+#   Requisitos: cmake >= 3.16 + un compilador de C++ (g++ / clang++).
+#   NO hacen falta flex, bison ni libfl-dev: parser.cpp/lexer.cpp van ya
+#   generados en generated/, y FlexLexer.h esta en third_party/flex/.
 #
-# Estructura: include/hpdl/<subsistema>/ y src/<subsistema>/ (ver README).
+#     cmake -S . -B build
+#     cmake --build build -j
+#     ./build/planner --help
+#
+#   Solo si modificas la gramatica (yacc/parser.yy o yacc/lexer.ll) hay que
+#   regenerar generated/ con flex+bison:
+#     tools/regenerate_parser.sh
 # ---------------------------------------------------------------------------
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -21,18 +25,19 @@ set(CMAKE_CXX_STANDARD 14)          # C++17 rompe por ambiguedad de std::data (c
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(HPDL_ENABLE_PYTHON "Soporte Python 2.7 embebido (legacy, desactivado)" OFF)
+set(GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated")
 
-# --- Generadores de parser/lexer -------------------------------------------
-find_package(FLEX REQUIRED)
-find_package(BISON REQUIRED)
-
-BISON_TARGET(parser "${CMAKE_CURRENT_SOURCE_DIR}/yacc/parser.yy"
-             "${CMAKE_CURRENT_BINARY_DIR}/parser.cpp"
-             DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/parser.hh")
-FLEX_TARGET(lexer "${CMAKE_CURRENT_SOURCE_DIR}/yacc/lexer.ll"
-            "${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp")
-ADD_FLEX_BISON_DEPENDENCY(lexer parser)
+# --- Comprobar que generated/ corresponde a la gramatica actual -------------
+# (si no, se compilaria un parser que no refleja yacc/*.yy|.ll)
+file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/yacc/parser.yy" _hp)
+file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/yacc/lexer.ll"  _hl)
+file(READ "${GENERATED_DIR}/grammar.sha256" _stamp)
+string(STRIP "${_stamp}" _stamp)
+if(NOT _stamp STREQUAL "${_hp} ${_hl}")
+  message(FATAL_ERROR
+    "La gramatica (yacc/) ha cambiado pero generated/ esta obsoleto.\n"
+    "Regenera con:  tools/regenerate_parser.sh   (requiere flex y bison)")
+endif()
 
 # --- Fuentes ----------------------------------------------------------------
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
@@ -46,8 +51,10 @@ list(REMOVE_ITEM SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/parser.cpp")
 
+# El interprete Python 2.7 embebido es legacy y esta desactivado por defecto.
+option(HPDL_ENABLE_PYTHON "Compilar el interprete Python 2.7 embebido (legacy)" OFF)
+
 if(NOT HPDL_ENABLE_PYTHON)
-  # Estos ficheros solo tienen sentido con el interprete Python 2.7 embebido.
   list(REMOVE_ITEM SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyAPI.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyLiteral.cpp"
@@ -57,14 +64,15 @@ if(NOT HPDL_ENABLE_PYTHON)
 endif()
 
 add_executable(planner
-  ${BISON_parser_OUTPUTS}
-  ${FLEX_lexer_OUTPUTS}
+  "${GENERATED_DIR}/parser.cpp"
+  "${GENERATED_DIR}/lexer.cpp"
   ${SOURCES})
 
 target_include_directories(planner PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/include"     # -> #include "hpdl/<subsistema>/..."
-  "${CMAKE_CURRENT_BINARY_DIR}"             # -> parser.hh / lexer.cpp generados
-  ${FLEX_INCLUDE_DIRS})
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"          # -> #include "hpdl/<subsistema>/..."
+  "${GENERATED_DIR}"                             # -> parser.hh
+  "${CMAKE_CURRENT_SOURCE_DIR}/third_party/flex" # -> FlexLexer.h
+  )
 
 # Red de propagacion de restricciones temporales usada por el planificador.
 target_compile_definitions(planner PRIVATE USE_AC3)

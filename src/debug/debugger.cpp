@@ -9,17 +9,7 @@
 #include "hpdl/undo/undoChangeValue.hh"
 #include "hpdl/planner/causalTable.hh"
 
-#ifdef HAVE_LIBREADLINE
-#  if defined(HAVE_READLINE_READLINE_H)
-#    include <readline/readline.h>
-#  elif defined(HAVE_READLINE_H)
-#    include <readline.h>
-#  else /* !defined(HAVE_READLINE_H) */
-extern char *readline ();
-#  endif /* !defined(HAVE_READLINE_H) */
-char *cmdline = NULL;
-#else /* !defined(HAVE_READLINE_READLINE_H) */
-/* no readline: lector de linea de respaldo (sin historial ni autocompletado) */
+/* lector de linea propio (sin readline: sin historial ni autocompletado) */
 #include <stdio.h>
 #include <string.h>
 static char * simple_read_line(const char * prompt)
@@ -33,20 +23,6 @@ static char * simple_read_line(const char * prompt)
         return 0;
     return strdup(line.c_str());
 }
-#endif /* HAVE_LIBREADLINE */
-
-#ifdef HAVE_READLINE_HISTORY
-#  if defined(HAVE_READLINE_HISTORY_H)
-#    include <readline/history.h>
-#  elif defined(HAVE_HISTORY_H)
-#    include <history.h>
-#  else /* !defined(HAVE_HISTORY_H) */
-extern void add_history ();
-extern int write_history ();
-extern int read_history ();
-#  endif /* defined(HAVE_READLINE_HISTORY_H) */
-/* no history */
-#endif /* HAVE_READLINE_HISTORY */
 
 bool FLAG_DEBUG=false;
 bool FLAG_RDEBUG=false;
@@ -130,18 +106,11 @@ char * command_generator (const char * text,int state)
 Debugger::Debugger(void){
     next = true;
     nexp = false;
-#ifdef HAVE_LIBREADLINE
-    rl_completion_entry_function = command_generator;
-#endif
     tmpdir = "./";
     viewerCommand = "/usr/bin/display";
     dotPath = "/usr/bin/dot";
     debugger = this;
-#ifdef HAVE_LIBREADLINE
-    setFReadLine(readline);
-#else
     setFReadLine(simple_read_line);
-#endif
 }
 
 Debugger::~Debugger()
@@ -210,21 +179,6 @@ istream * Debugger::preprocessLine(void){
     {
         read = ":debug: ";
         read +=	+ cad;
-#ifdef HAVE_LIBREADLINE
-        if(*cad)
-        {
-            add_history(cad);
-        }
-        else
-        {
-            HIST_ENTRY * hisnod = history_get(history_base + history_length -1);
-            if(hisnod != 0)
-            {
-                read = ":debug:";
-                read += hisnod->line;
-            }
-        }
-#endif
         free(cad);
         cad = 0;
     }

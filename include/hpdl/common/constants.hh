@@ -4,9 +4,6 @@
 #if PYTHON_FOUND
 #include <python2.7/Python.h>
 #endif
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 #include <string.h>
 #include <string>
 #include <vector>
