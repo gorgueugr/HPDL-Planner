@@ -3,7 +3,7 @@
 
 using namespace std;
 
-#include "constants.hh"
+#include "hpdl/common/constants.hh"
 #include <string>
 #include <iostream>
 #include <stdlib.h>
@@ -11,8 +11,8 @@ using namespace std;
 #include <math.h>
 #include <ctime>
 #include "parser.hh"
-#include "MyLexer.hh"
-#include "papi.hh"
+#include "hpdl/parser/MyLexer.hh"
+#include "hpdl/parser/papi.hh"
 
 static bool inComment = false;
 static bool inScript = false;
