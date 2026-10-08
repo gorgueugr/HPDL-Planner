@@ -26,10 +26,12 @@ PASS=0; FAIL=0; SKIP=0
 ok()   { echo "  PASS  $1"; PASS=$((PASS+1)); }
 no()   { echo "  FAIL  $1"; echo "        $2"; FAIL=$((FAIL+1)); }
 skip() { echo "  SKIP  $1  ($2)"; SKIP=$((SKIP+1)); }
-eq()   { if [ "$2" = "$3" ]; then ok "$1"; else no "$1" "esperado:
-$(printf '%s' "$3")
+eq()   { local a b
+        a="$(printf '%s' "$2" | tr -d '\r')"; b="$(printf '%s' "$3" | tr -d '\r')"
+        if [ "$a" = "$b" ]; then ok "$1"; else no "$1" "esperado:
+$b
         obtenido:
-$(printf '%s' "$2")"; fi; }
+$a"; fi; }
 has()  { case "$2" in *"$3"*) ok "$1";; *) no "$1" "no aparece <<$3>> en:
 $(printf '%s' "$2" | head -5)";; esac; }
 lack() { case "$2" in *"$3"*) no "$1" "no deberia aparecer <<$3>> en:
@@ -39,7 +41,9 @@ $(printf '%s' "$2" | head -5)";; *) ok "$1";; esac }
 # tests/README.md). Se ejecuta en un grupo cuyo stderr se descarta, de modo que
 # el aviso "Segmentation fault" del shell no ensucie la salida de la bateria,
 # pero SI se conserva la salida del propio planificador.
-run()  { { $TMO "$BIN" "$@" 2>&1; } 2>/dev/null; }       # stdout+stderr
+# Se normalizan los finales de linea: segun como se configure el checkout en
+# Windows los ficheros golden pueden llegar con CRLF.
+run()  { { $TMO "$BIN" "$@" 2>&1; } 2>/dev/null | tr -d '\r'; }  # stdout+stderr
 plan() { run "$@" | grep -E '^:action ' || true; }      # solo las acciones
 
 # --------------------------------------------------------------------------
