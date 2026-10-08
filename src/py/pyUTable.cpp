@@ -5,8 +5,8 @@
 #include "hpdl/common/constants.hh"
 #include "hpdl/py/pythonWrapper.hh"
 #include "hpdl/unify/unifierTable.hh"
-#include <python2.7/structmember.h>
-#include "hpdl/py/pyTerm.cpp"
+#include <structmember.h>
+#include "pyTerm.cpp"
 using namespace std;
 
 #ifdef PYTHON_FOUND
@@ -28,7 +28,7 @@ typedef struct {
  */
 static void SdxUTable_dealloc(SdxUTable * self)
 {
-    self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 
@@ -63,7 +63,7 @@ static PyObject * SdxUTable_str(SdxUTable *self)
     ostringstream os;
     if(self->ut){
 	self->ut->print(&os);
-	return PyString_FromString(os.str().c_str());
+	return PyUnicode_FromString(os.str().c_str());
     }
     Py_INCREF(Py_None);
     return Py_None;
@@ -75,23 +75,23 @@ static PyObject * SdxUTable_next(SdxUTable * self){
 	    self->init = true;
 	    self->it = self->ut->getUnifierBegin();
 	    if(self->it == self->ut->getUnifierEnd()){
-		return PyInt_FromLong(0);
+		return PyLong_FromLong(0);
 	    }
 
 	}
 	else if(self->it == self->ut->getUnifierEnd()){
-	    return PyInt_FromLong(0);
+	    return PyLong_FromLong(0);
 	}
 	else{
 	    self->it++;
 	    if(self->it == self->ut->getUnifierEnd()){
-		return PyInt_FromLong(0);
+		return PyLong_FromLong(0);
 	    }
 	}
-	return PyInt_FromLong(1);
+	return PyLong_FromLong(1);
     }
     else
-	return PyInt_FromLong(0);
+	return PyLong_FromLong(0);
 };
 
 static PyObject * SdxUTable_get_substitution(SdxUTable * self, PyObject *args){
@@ -133,9 +133,9 @@ static PyObject * SdxUTable_get_substitution(SdxUTable * self, PyObject *args){
 	   }
 	}
     }
-    else if(PyString_Check(n)){
+    else if(PyUnicode_Check(n)){
 	// Coger el nombre
-	name = PyString_AsString(n);
+	name = PyUnicode_AsUTF8(n);
 	// Averiguar si es una variable o un símbolo.
 	if(name[0] == '?'){
 	   if((*(self->it))->getSubstitution(name,&term)){
@@ -145,7 +145,7 @@ static PyObject * SdxUTable_get_substitution(SdxUTable * self, PyObject *args){
 	       ostringstream s;
 	       PrintKey pk = PrintKey(&s);
 	       pk(term);
-	       return PyString_FromString(s.str().c_str());
+	       return PyUnicode_FromString(s.str().c_str());
 	   }
 	   else{
 	       Py_INCREF(Py_None);
@@ -187,58 +187,27 @@ static PyMethodDef SdxUTable_methods[] = {
 };
 
 static PyTypeObject SdxUTableType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
-    "siadex.SdxUTable",             /*tp_name*/
-    sizeof(SdxUTable),             /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    (destructor) SdxUTable_dealloc, /*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    0,                         /*tp_str*/
-    0,                         /*tp_getattro*/
-    0,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    "Siadex Type",           /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    0,		               /* tp_iter */
-    0,		               /* tp_iternext */
-    SdxUTable_methods,             /* tp_methods */
-    SdxUTable_members,             /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    (initproc)SdxUTable_init,      /* tp_init */
-    0,                         /* tp_alloc */
-    SdxUTable_new,                 /* tp_new */
+    PyVarObject_HEAD_INIT(NULL, 0)
 };
 
 /**
  * Inicialización del módulo
  */
 static void SdxUTable_initModule(PyObject * m){
-    // Definir los nuevos tipos para siadex
-    PyTypeObject * sptr = &SdxUTableType;
-    if (PyType_Ready(&SdxUTableType) < 0)
-	return;
+    SdxUTableType.tp_name      = "siadex.SdxUTable";
+    SdxUTableType.tp_basicsize = sizeof(SdxUTable);
+    SdxUTableType.tp_dealloc   = (destructor) SdxUTable_dealloc;
+    SdxUTableType.tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+    SdxUTableType.tp_doc       = "Siadex unifier table";
+    SdxUTableType.tp_methods   = SdxUTable_methods;
+    SdxUTableType.tp_members   = SdxUTable_members;
+    SdxUTableType.tp_init      = (initproc) SdxUTable_init;
+    SdxUTableType.tp_new       = SdxUTable_new;
 
+    if (PyType_Ready(&SdxUTableType) < 0)
+        return;
     Py_INCREF(&SdxUTableType);
-    PyModule_AddObject(m, "SdxUTable", (PyObject *) sptr);
+    PyModule_AddObject(m, "SdxUTable", (PyObject *) &SdxUTableType);
 }
 
 #endif

@@ -112,7 +112,7 @@ build/                       generado por CMake (ignorado por git)
 | `unify/` | unificacion de terminos |
 | `undo/` | deshacer cambios de estado |
 | `parser/` | API del parser, escaner de entrada, XML y textos |
-| `py/` | interprete Python 2.7 embebido (opcional, desactivado) |
+| `py/` | interprete Python 3 embebido (opcional, autodetectado) |
 | `debug/` | depurador integrado |
 
 Los `#include` son **cualificados** (`#include "hpdl/planner/plan.hh"`) en vez de por
@@ -137,9 +137,19 @@ tools/regenerate_parser.sh
 
 ## Notas de mantenimiento
 
-- **Sin Python 2.7 ni readline.** Se quitaron ambos del build (eran la causa principal de
-  que no compilase). El interprete Python 2.7 embebido (legacy) se puede reactivar con
-  `cmake -DHPDL_ENABLE_PYTHON=ON`; entonces `examples/bloques.hpdl` tambien funciona.
+- **Compilar no requiere dependencias extra**: cmake + compilador, y nada mas.
+- **Interprete Python embebido (opcional, autodetectado).** Lo necesita
+  `examples/bloques.hpdl` (su funcion `(igual ?x ?y)`). Si estan las cabeceras de
+  Python 3 se compila; si no, se desactiva sin romper el build. Se controla con
+  `-DHPDL_PYTHON=AUTO|ON|OFF` (por defecto `AUTO`):
+
+  ```bash
+  sudo apt-get install python3-dev          # habilita el soporte
+  cmake -S . -B build -DHPDL_PYTHON=ON      # o forzarlo / desactivarlo con OFF
+  ```
+- El interprete embebido se porto de **Python 2.7 (EOL) a Python 3**.
+- **Sin readline**: se elimino el codigo, que ademas estaba muerto (habia un lector de
+  linea propio que ya se usaba).
 - Estandar **C++14**, probado con `g++ 13`, Bison 3.8 y Flex 2.6.
   (C++17 rompe por ambiguedad de `std::data` en `src/common/check.cpp`.)
 - Build *out-of-source*: no deja `parser.cpp` / `lexer.cpp` dentro del arbol de fuentes.

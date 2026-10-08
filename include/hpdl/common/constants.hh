@@ -2,7 +2,7 @@
 #define CONSTANTS_HH
 
 #if PYTHON_FOUND
-#include <python2.7/Python.h>
+#include <Python.h>
 #endif
 #include <string.h>
 #include <string>

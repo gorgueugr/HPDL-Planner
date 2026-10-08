@@ -4,8 +4,6 @@
 
 using namespace std;
 #include "hpdl/common/constants.hh"
-#include <python2.7/compile.h>
-#include <python2.7/eval.h>
 #include <sstream>
 #include <vector>
 

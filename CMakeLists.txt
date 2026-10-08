@@ -51,16 +51,33 @@ list(REMOVE_ITEM SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/parser.cpp")
 
-# El interprete Python 2.7 embebido es legacy y esta desactivado por defecto.
-option(HPDL_ENABLE_PYTHON "Compilar el interprete Python 2.7 embebido (legacy)" OFF)
+# --- Interprete Python embebido (opcional) ----------------------------------
+# AUTO: se activa solo si estan las cabeceras de desarrollo de Python 3.
+set(HPDL_PYTHON "AUTO" CACHE STRING "Soporte Python embebido: AUTO | ON | OFF")
+set_property(CACHE HPDL_PYTHON PROPERTY STRINGS AUTO ON OFF)
 
-if(NOT HPDL_ENABLE_PYTHON)
-  list(REMOVE_ITEM SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyAPI.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyLiteral.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyTerm.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyUTable.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pythonWrapper.cpp")
+set(HAVE_PYTHON FALSE)
+if(HPDL_PYTHON STREQUAL "ON")
+  find_package(Python3 REQUIRED COMPONENTS Development)
+  set(HAVE_PYTHON TRUE)
+elseif(HPDL_PYTHON STREQUAL "AUTO")
+  find_package(Python3 COMPONENTS Development QUIET)
+  if(Python3_Development_FOUND)
+    set(HAVE_PYTHON TRUE)
+  endif()
+endif()
+
+# pythonWrapper.cpp incluye a pyAPI/pyLiteral/pyUTable/pyTerm (una sola unidad de
+# traduccion), asi que esos cuatro no deben compilarse por separado: darian
+# definiciones duplicadas al enlazar.
+list(REMOVE_ITEM SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyAPI.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyLiteral.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyTerm.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pyUTable.cpp")
+
+if(NOT HAVE_PYTHON)
+  list(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/py/pythonWrapper.cpp")
 endif()
 
 add_executable(planner
@@ -77,10 +94,13 @@ target_include_directories(planner PRIVATE
 # Red de propagacion de restricciones temporales usada por el planificador.
 target_compile_definitions(planner PRIVATE USE_AC3)
 
-if(HPDL_ENABLE_PYTHON)
-  find_package(Python2 REQUIRED COMPONENTS Development)
-  target_compile_definitions(planner PRIVATE PYTHON_FOUND)
-  target_link_libraries(planner PRIVATE Python2::Python)
+if(HAVE_PYTHON)
+  target_compile_definitions(planner PRIVATE PYTHON_FOUND=1)
+  target_link_libraries(planner PRIVATE Python3::Python)
+  message(STATUS "Python embebido: ACTIVADO (Python ${Python3_VERSION})")
+else()
+  message(STATUS "Python embebido: desactivado (examples/bloques.hpdl no funcionara; "
+                 "instala python3-dev y reconfigura, o usa -DHPDL_PYTHON=ON)")
 endif()
 
 install(TARGETS planner RUNTIME DESTINATION bin)

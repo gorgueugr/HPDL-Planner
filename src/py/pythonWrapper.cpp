@@ -10,7 +10,7 @@ bool FLAG_TRUSTED=true;
 #include "hpdl/domain/domain.hh"
 #include "hpdl/domain/problem.hh"
 #include "hpdl/parser/papi.hh"
-#include "hpdl/py/pyAPI.cpp"
+#include "pyAPI.cpp"
 
 using namespace std;
 
@@ -18,19 +18,20 @@ using namespace std;
 PythonWrapper::PythonWrapper(void)
 {
     Py_Initialize();
-    Py_InitModule("siadex",SiadexMethods);
+
+    // En Python 3 el modulo se crea con PyModule_Create y hay que registrarlo
+    // en sys.modules para que PyImport_ImportModule("siadex") lo encuentre.
+    static PyModuleDef SiadexModule = {
+        PyModuleDef_HEAD_INIT, "siadex", "API embebida de Siadex", -1,
+        SiadexMethods, NULL, NULL, NULL, NULL
+    };
+    PyObject * sdx = PyModule_Create(&SiadexModule);
+    if(sdx)
+        PyDict_SetItemString(PyImport_GetModuleDict(), "siadex", sdx);
 
     // usamos como namespace el standard
     modules.push_back(PyImport_ImportModule("__main__"));
     modules.push_back(PyImport_ImportModule("siadex"));
-    if(!FLAG_TRUSTED)
-        // activamos el modo de ejecuci�n restringido
-        modules.push_back(PyImport_ImportModule("rexec"));
-
-    if(modules.front() == 0){
-        *errflow << "Fatal Error: Python is unable to load module '__main__'" << endl;
-        exit(EXIT_FAILURE);
-    }
 
     if(modules[1] == 0){
         *errflow << "Fatal Error: Python is unable to load module 'siadex'" << endl;
@@ -174,7 +175,7 @@ bool PythonWrapper::exec(PyObject * pCode, const Header * func, const Unifier * 
             Py_DECREF(n);
         }
         else if(termtable->isConstant(aux)){
-            PyObject * s = PyString_FromString(termtable->getConstant(aux)->getName());
+            PyObject * s = PyUnicode_FromString(termtable->getConstant(aux)->getName());
             PyDict_SetItemString(pDict,var,s);
             Py_DECREF(s);
         }
@@ -189,7 +190,7 @@ bool PythonWrapper::exec(PyObject * pCode, const Header * func, const Unifier * 
         }
     }
 
-    PyEval_EvalCode((PyCodeObject *)pCode, pDict, pDict);
+    PyEval_EvalCode(pCode, pDict, pDict);
 
     pResult = PyDict_GetItemString(pDict,"RETURN");
     if(!pResult){
@@ -209,14 +210,14 @@ bool PythonWrapper::exec(PyObject * pCode, const Header * func, const Unifier * 
         if(PyFloat_Check(pResult)){
             *res = PyFloat_AsDouble(pResult);
         }
-        else if(PyInt_Check(pResult)){
-            *res = (double) PyInt_AsLong(pResult);
+        else if(PyLong_Check(pResult)){
+            *res = (double) PyLong_AsLong(pResult);
         }
         else if(PyLong_Check(pResult)){
             *res = (double) PyLong_AsLong(pResult);
         }
         else if(PyBool_Check(pResult)){
-            *res = (double) PyInt_AsLong(pResult);
+            *res = (double) PyLong_AsLong(pResult);
         }
         else{
             *errflow << "Warning: PythonWrapper::exec(): Unexpected return type" << endl;
@@ -274,17 +275,17 @@ bool PythonWrapper::addUnifier(PyObject * pObj, UnifierTable * ut, int v, int si
     if(PyFloat_Check(pObj)){
         key.second = PyFloat_AsDouble(pObj);
     }
-    else if(PyInt_Check(pObj)){
-        key.second = (double) PyInt_AsLong(pObj);
+    else if(PyLong_Check(pObj)){
+        key.second = (double) PyLong_AsLong(pObj);
     }
     else if(PyLong_Check(pObj)){
         key.second = (double) PyLong_AsLong(pObj);
     }
     else if(PyBool_Check(pObj)){
-        key.second = (double) PyInt_AsLong(pObj);
+        key.second = (double) PyLong_AsLong(pObj);
     }
-    else if(PyString_Check(pObj)){
-        string s = PyString_AsString(pObj);
+    else if(PyUnicode_Check(pObj)){
+        string s = PyUnicode_AsUTF8(pObj);
         // la constante deber�a haberse definido con anterioridad, en otro caso
         // se trata de un error
         ldictionaryit posit = (domain->cdictionary).find(s.c_str());
