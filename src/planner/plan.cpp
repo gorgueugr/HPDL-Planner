@@ -579,6 +579,39 @@ bool Plan::mainLoop(void) {
 }
 ;
 
+// Poda de ciclos en el arbol de descomposicion.
+//
+// Comprueba si la tarea 'th' -que se va a expandir- es identica (mismo
+// identificador de tarea declarada y mismos argumentos) a alguno de sus
+// ancestros en la rama que se esta explorando. Volver a expandirla solo
+// reproduce un estado de descomposicion ya visitado: con metodos recursivos
+// (p.ej. m-drive-to-via en el dominio Transport) el DFS genera ramas de
+// profundidad infinita, no retrocede nunca y agota la memoria sin llegar a
+// explorar las alternativas que si llevan al plan.
+//
+// La cadena de ancestros se recorre con Task::getParent(), que apunta a la
+// tarea del metodo que genero a la actual; para cada eslabon se compara la
+// instancia ya instanciada (getParentHeader(), con argumentos en firme).
+static bool isRepeatedInBranch(const Task * th) {
+    const KeyList * params = th->getParameters();
+    const Task * p = th->getParent();
+    // Cota de seguridad por si la cadena de ancestros estuviera corrupta
+    for (int guard = 0; p != 0 && guard < 100000; guard++) {
+        const TaskHeader * instance = p->getParentHeader();
+        if (instance != 0 && instance != th
+                && instance->getId() == th->getId()
+                && *(instance->getParameters()) == *params) {
+            return true;
+        }
+        if (p != th && p->getId() == th->getId()
+                && *(p->getParameters()) == *params) {
+            return true;
+        }
+        p = p->getParent();
+    }
+    return false;
+}
+
 // Esta funcion va devolviendo tareas por expandir, devolviendo una de las posibles
 // cada vez que se la llama. Si no hay mas posibilidades devuelve 0.
 //
@@ -696,6 +729,19 @@ bool Plan::selectTask(StackNode * context) {
                 else
                     thfather->printHead(errflow);
                 *errflow << endl;
+            }
+
+            // Poda de ciclos: si esta tarea repite un ancestro de la rama no
+            // se expande. Se trata igual que una tarea sin candidatos, para
+            // que el bucle elija otra tarea de la agenda.
+            if (isRepeatedInBranch(thfather)) {
+                if (FLAG_VERBOSE) {
+                    *errflow << "(### " << stack.size()
+                        << " ###) FAIL!!: Task already expanded in this"
+                        << " branch (cycle)." << endl;
+                }
+                context->offspring = 0;
+                continue;
             }
 
             // obtenemos las tareas del dominio que unifican con la definicion
