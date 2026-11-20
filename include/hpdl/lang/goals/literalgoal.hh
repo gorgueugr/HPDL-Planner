@@ -6,7 +6,7 @@
 #include "hpdl/lang/goals/goal.hh"
 #include "hpdl/unify/unifierTable.hh"
 #include "hpdl/common/header.hh"
-#include <unordered_map>
+#include <tr1/unordered_map>
 
 using namespace std;
 
@@ -77,7 +77,7 @@ class LiteralGoal : public Goal, public Literal
 
 };
 
-typedef std::unordered_multimap<int, Literal *> ISTable;
+typedef std::tr1::unordered_multimap<int, Literal *> ISTable;
 typedef ISTable::const_iterator iscit;
 typedef ISTable::iterator isit;
 

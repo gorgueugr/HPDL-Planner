@@ -2,7 +2,7 @@
 #define EXPANSIONTREE_HH   
 
 #include "hpdl/common/constants.hh"
-#include <unordered_map>
+#include <tr1/unordered_map>
 #include "hpdl/planner/stacknode.hh"
 
 using namespace std;
@@ -16,7 +16,7 @@ typedef struct NodeTaskTree{
     vector<const Task *> children;
 }NodeTaskTree;
 
-typedef std::unordered_map<long, NodeTaskTree *, std::hash<long>,equal_to<long> > TaskTreeDict;
+typedef std::tr1::unordered_map<long, NodeTaskTree *, std::tr1::hash<long>,equal_to<long> > TaskTreeDict;
 typedef TaskTreeDict::iterator ttdite;
 typedef TaskTreeDict::const_iterator ttdcite;
 
