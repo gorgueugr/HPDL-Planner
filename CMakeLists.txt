@@ -132,6 +132,16 @@ if(HPDL_BUILD_TESTS)
     DEPENDS planner
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     USES_TERMINAL)
+
+  # Verificacion funcional en Python: ademas de que el binario responda,
+  # comprueba que los planes son aplicables y alcanzan el objetivo, y que la
+  # instancia recursiva del IPC 2020 termina.  Se registra solo si hay Python 3.
+  find_program(HPDL_PYTHON3 NAMES python3 python)
+  if(HPDL_PYTHON3)
+    add_test(NAME py_siadex
+             COMMAND "${HPDL_PYTHON3}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_siadex.py"
+                     --planner $<TARGET_FILE:planner>)
+  endif()
 endif()
 
 install(TARGETS planner RUNTIME DESTINATION bin)
