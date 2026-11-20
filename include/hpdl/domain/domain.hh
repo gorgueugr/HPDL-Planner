@@ -2,7 +2,7 @@
 #define DOMAIN_H
 #include "hpdl/htn/method.hh"
 #include <vector>
-#include <unordered_map>
+#include <tr1/unordered_map>
 #include <assert.h>
 #include "hpdl/common/type.hh"
 #include "hpdl/lang/literal.hh"
@@ -10,9 +10,9 @@
 #include "hpdl/parser/xmlwriter.hh"
 #include "hpdl/common/meta.hh"
 
-typedef std::unordered_multimap<int, Task *> TaskTable;
-typedef std::unordered_multimap<int, Literal *> LiteralTable;
-typedef std::unordered_multimap<int, Axiom *> AxiomTable;
+typedef std::tr1::unordered_multimap<int, Task *> TaskTable;
+typedef std::tr1::unordered_multimap<int, Literal *> LiteralTable;
+typedef std::tr1::unordered_multimap<int, Axiom *> AxiomTable;
 typedef std::pair<TaskTable::const_iterator, TaskTable::const_iterator> TaskTableRange ;
 typedef std::pair<LiteralTable::const_iterator, LiteralTable::const_iterator> LiteralTableRange ;
 typedef std::pair<AxiomTable::const_iterator, AxiomTable::const_iterator> AxiomTableRange ;
@@ -28,7 +28,7 @@ typedef AxiomTable::const_iterator axiomtablecit;
 typedef AxiomTable::iterator axiomtableit;
 typedef constantTable::const_iterator constablecit;
 
-typedef std::unordered_map<std::string, int , icaseDJBHash, ieqstr> LDictionary;
+typedef std::tr1::unordered_map<std::string, int , icaseDJBHash, ieqstr> LDictionary;
 typedef LDictionary::const_iterator ldictionarycit;
 typedef LDictionary::iterator ldictionaryit;
 
